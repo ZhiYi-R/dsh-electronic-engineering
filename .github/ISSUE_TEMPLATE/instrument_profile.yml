@@ -1,0 +1,70 @@
+name: 🔌 新仪器 Profile
+description: 请求支持一款新仪器（新增 profile bundle）
+labels: ["instrument-profile", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        支持新仪器只需要一个新的 profile bundle（JSON 命令表 + 可选 Lua），
+        不需要改 Rust 代码。请提供以下信息以便编写和验证 profile。
+
+  - type: input
+    id: instrument
+    attributes:
+      label: 仪器品牌与型号
+      description: 如 "Rigol DS1054Z"、"Keysight 34461A"
+      placeholder: 品牌 + 具体型号
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 仪器类别
+      options:
+        - 万用表 (DMM)
+        - 电源 (PSU)
+        - 信号发生器 / AWG
+        - 示波器
+        - 电子负载
+        - 频谱分析仪
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: connection
+    attributes:
+      label: 连接方式
+      description: USBTMC (VID:PID)、LAN/Socket (端口)、GPIB、串口？
+      placeholder: USBTMC usb:1ab1:09c4，或 tcp://host:5025
+    validations:
+      required: false
+
+  - type: textarea
+    id: manual
+    attributes:
+      label: 编程手册
+      description: 链接到厂商 SCPI 编程手册（PDF 或在线版），并注明需要支持的命令范围。
+      placeholder: https://... (厂商编程手册链接)
+    validations:
+      required: true
+
+  - type: textarea
+    id: commands
+    attributes:
+      label: 优先需要的命令
+      description: 最常用的测量 / 输出 / 配置命令，如 MEAS:VOLT:DC?、OUTP ON、SOUR:FREQ 1kHz
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: 输出类安全策略
+      description: 若是输出类仪器（电源/信号源），需要哪些保护？（会体现在 profile 的 safety_output 策略中）
+      options:
+        - label: 电压/电流上限钳制
+        - label: 输出使能白名单（默认 OFF）
+        - label: 其他（在描述中说明）
+        - label: 不适用（测量类仪器）

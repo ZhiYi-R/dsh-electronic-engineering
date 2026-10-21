@@ -1,0 +1,85 @@
+name: 🐛 Bug 报告
+description: 报告插件或后端的问题（崩溃、校验错误、通信异常等）
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请尽量填写以下信息，日志和复现步骤对定位问题最关键。
+        注意：原始 SCPI 不会暴露给模型，如果是"想让模型执行某条命令"的需求，请用功能请求模板。
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: 问题组件
+      description: 出问题的是哪一部分？
+      options:
+        - Rust 后端（scpi-core / scpi CLI）
+        - 插件宿主（profile 加载 / 会话 / 动态工具）
+        - 仪器 Profile（命令表 / Lua 脚本 / 安全策略）
+        - 打包发布（tar.gz / zip / 安装）
+        - CI / 文档
+        - 不确定
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本
+      description: release 名称（如 v0.1.0-alpha.1、nightly 日期）或 commit hash
+      placeholder: v0.1.0-alpha.1
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 运行平台
+      options:
+        - linux-x64
+        - linux-arm64
+        - darwin-x64 (macOS Intel)
+        - darwin-arm64 (macOS Apple Silicon)
+        - win32-x64
+        - win32-arm64
+        - 其他 / 多平台
+    validations:
+      required: true
+
+  - type: input
+    id: instrument
+    attributes:
+      label: 仪器型号与连接方式
+      description: 如 "Rigol DM3058, USBTMC"、"Keysight 33600A, tcp://host:5025"
+      placeholder: Rigol DM3058 · usb:1ab1:09c4
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 发生了什么？预期是什么？
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 加载 profile '...'
+        2. 调用工具 '...'
+        3. 看到 '...'
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志
+      description: 会话 / CLI 输出、错误队列内容、panic backtrace。请去除序列号等敏感信息。
+      render: text
+    validations:
+      required: false
