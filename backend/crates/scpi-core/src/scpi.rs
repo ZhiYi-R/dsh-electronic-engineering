@@ -1,12 +1,10 @@
-//! # SCPI 命令头语法模型与长短格式双向匹配
+//! SCPI command header parsing and short/long mnemonic matching.
 //!
-//! SCPI（可编程仪器标准命令）规范在手册中使用大小写混排来表达助记符的缩写规则：
-//! 大写字母部分为合法缩写（短格式），整个单词为全称（长格式），例如 `MEASure` 对应 `MEAS` 与 `MEASURE`。
-//! 并且允许带有数字后缀（例如通道号 `CHANnel1`、发生器源 `SOURce2`）。
-//!
-//! 本模块解析并同时保留助记符的短格式与长格式，从而实现：
-//! 1. 容错匹配：无论调用者输入的是短格式（`:meas:volt:dc?`）还是全拼（`:MEASure:VOLTage:DC?`），都能与档案中的标准定义无缝对齐；
-//! 2. 规范输出：发往硬件总线时统一规范为档案中声明的长写形式，保证通信行为稳定可回放。
+//! SCPI manuals write the required short form in uppercase and the remainder
+//! of the long form in lowercase (e.g. `MEASure` matches `MEAS` and `MEASURE`),
+//! optionally followed by a numeric suffix (`CHANnel1`, `SOURce2`).
+//! [`HeaderPattern`] keeps both forms so callers can pass either spelling while
+//! outgoing wire commands always use the declared long form.
 
 use crate::error::{Error, Result};
 

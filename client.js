@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 window.__ModuleLoader__.load({
   id: 'ee-fat-whale',
   factory(require) {

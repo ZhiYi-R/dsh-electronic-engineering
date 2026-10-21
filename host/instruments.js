@@ -5,11 +5,7 @@ const output = {
   render: (_args, value) => [{ type: 'text', text: JSON.stringify(value, null, 2) }],
 };
 
-/**
- * 动态仪器工具管理器：
- * 负责实现三层工具模型的第 2 层（单台仪器概览）与第 3 层（具体命令工具），
- * 处理硬件选件探测、能力分组过滤、通道折叠以及输入预校验。
- */
+// Manages dynamic per-instrument overview tools (level 2) and command tools (level 3).
 export class InstrumentTools {
   constructor({ ctx, store, sessions }) {
     this.ctx = ctx;
@@ -42,13 +38,13 @@ export class InstrumentTools {
     try {
       entry.instrumentTool?.disposer();
     } catch {
-      // 宿主插件作用域可能已提前销毁，工具注销失败属于正常现象，安全忽略
+      // Scope may already be disposed by the host.
     }
     for (const tool of entry.tools) {
       try {
         tool.disposer();
       } catch {
-        // 同样忽略已被宿主框架清理的具象工具注销异常
+        // Scope may already be disposed by the host.
       }
     }
   }
@@ -239,20 +235,13 @@ export class InstrumentTools {
     };
   }
 
-  /**
-   * 动态激活或切换第三层命令工具：
-   * 1. 注销之前已注册的旧命令工具；
-   * 2. 根据 requested 列表（或 ["*"]）筛选匹配的逻辑工具；
-   * 3. 逐一注册新的工具到宿主上下文；
-   * 4. 出现异常时自动回滚清理，防止残留悬空工具。
-   */
   async activate(entry, requested) {
     const selected = resolveCapabilities(entry.options.profile, requested);
     for (const tool of entry.tools) {
       try {
         tool.disposer();
       } catch {
-        // 忽略可能已失效的历史工具注销错误
+        // Ignore stale disposers.
       }
     }
     entry.tools = [];
@@ -267,12 +256,11 @@ export class InstrumentTools {
         entry.tools.push({ id: logical.id, name, disposer, logical });
       }
     } catch (error) {
-      // 注册过程中若有任何一个工具报错，全部回滚以保证状态一致性
       for (const tool of entry.tools) {
         try {
           tool.disposer();
         } catch {
-          // 回滚清理过程静默忽略二次错误
+          // Ignore rollback errors.
         }
       }
       entry.tools = [];
@@ -514,13 +502,8 @@ export class InstrumentTools {
   }
 }
 
-/**
- * 构建逻辑工具集与通道折叠：
- * 1. 过滤未安装硬件选件的命令（根据前面 probeOptions 的实测结果）；
- * 2. 识别 ch1.*, ch2.* 等按物理通道命名的命令；
- * 3. 检查通道对称性：若参数类型、读写属性完全一致，合并为带 `channel` 参数的单一逻辑工具；
- * 4. 若通道间属性不一致（例如仅通道 1 具备特殊耦合），则优雅降级为独立工具。
- */
+// Filter commands by installed options and fold symmetric `chN.*` commands
+// into a single logical tool with a `channel` argument.
 function buildLogicalTools(profile, options) {
   const capabilityDefs = Array.isArray(profile.capabilities) ? profile.capabilities : [];
   const channels = Number.isInteger(profile.channels)

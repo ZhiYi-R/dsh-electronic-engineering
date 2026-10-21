@@ -1,8 +1,9 @@
 {
   "name": "ee-fat-whale",
   "version": "0.1.0",
+  "license": "AGPL-3.0-or-later",
   "private": true,
-  "description": "电子工程师大肥鱼 (ee-fat-whale) — 通用 SCPI 仪器执行器插件：管理仪器 Profile、会话与 LLM 工具。",
+  "description": "SCPI 仪器控制插件：管理仪器 Profile、会话与动态工具。",
   "type": "module",
   "exports": {
     ".": "./index.js",

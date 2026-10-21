@@ -10,12 +10,7 @@ function register(ctx, definition) {
   ctx.tools.register({ ...definition, output });
 }
 
-/**
- * 注册 5 个全局基础管理工具（第一层 Basic 工具）
- * 这是大模型和用户始终可见的静态门面，用于管理 Profile 档案、扫描硬件总线和调度会话。
- */
 export function registerTools(ctx, { store, sessions, pluginRoot, instruments }) {
-  // 工具 1：Profile 档案包管理（查看、安装、导入、删除）
   register(ctx, {
     name: 'instrument_profiles',
     description:
@@ -87,7 +82,6 @@ export function registerTools(ctx, { store, sessions, pluginRoot, instruments })
     },
   });
 
-  // 工具 2：USB 总线硬件扫描（跨平台识别 USBTMC 设备，根据 VID/PID 关联匹配已装 Profile）
   register(ctx, {
     name: 'instrument_scan',
     description:
@@ -112,7 +106,6 @@ export function registerTools(ctx, { store, sessions, pluginRoot, instruments })
     },
   });
 
-  // 工具 3：仪器加载与二级门面注册（开启会话并注册 instrument_<name>_<serial> 工具）
   register(ctx, {
     name: 'instrument_load',
     description:
@@ -152,7 +145,6 @@ export function registerTools(ctx, { store, sessions, pluginRoot, instruments })
     },
   });
 
-  // 工具 4：仪器卸载（撤销所有动态生成的具象命令工具，并关闭底层硬件子进程会话）
   register(ctx, {
     name: 'instrument_unload',
     description:
@@ -172,7 +164,6 @@ export function registerTools(ctx, { store, sessions, pluginRoot, instruments })
     },
   });
 
-  // 工具 5：低级会话直管（供高级调试排障直接操作 open / list / close）
   register(ctx, {
     name: 'instrument_session',
     description:

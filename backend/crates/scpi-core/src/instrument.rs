@@ -18,11 +18,10 @@ pub struct Reading {
     pub raw: String,
 }
 
-/// 绑定了指定 Profile 档案与底层传输通道的单台仪器活跃会话。
+/// An open instrument session bound to a [`Profile`] and a [`Transport`].
 ///
-/// 【设计权衡】：本句柄特意保持单线程设计（内部使用 `Rc<RefCell<_>>`），因为硬件总线本质上是串行设备，
-/// 同一瞬间只能有一条 SCPI 报文在线缆上流动；并且嵌入的 Lua 宏运行时并非线程安全（非 `Send`）。
-/// 多仪器并发通过在上层为每台设备拉起独立的进程或会话来实现。
+/// Kept single-threaded (`Rc<RefCell<_>>`) because physical SCPI transports are
+/// serial and the embedded `mlua::Lua` runtime is `!Send`.
 pub struct Instrument {
     core: Rc<RefCell<Core>>,
     #[cfg(feature = "lua")]
@@ -332,10 +331,8 @@ impl Core {
 
     pub(crate) fn set_command(&mut self, id: &str, args: &[Value]) -> Result<String> {
         let command = self.require_command(id)?.clone();
-        // 硬件输出安全联锁（Safety Output）：
-        // 当修改幅度、频率或输出偏置等可能产生危险电压瞬变的高危参数时，
-        // 自动先在总线上将输出通道关闭（输出 off）-> 下发新参数 -> 成功后再重新开启输出（输出 on）。
-        // 若新参数下发失败或被拒绝，输出端口将保持关闭状态，彻底杜绝瞬间过压烧毁待测板卡的隐患。
+        // When `safety_output` is set, turn the output off before writing and
+        // only re-enable it if the write succeeds.
         if let Some(output_id) = command.safety_output.clone() {
             self.set_command_direct(&output_id, &[Value::Bool(false)])?;
             let result = self.set_command_direct(id, args);

@@ -10,10 +10,6 @@ const STATIC_TOOLS = new Set([
   'instrument_session',
 ]);
 
-/**
- * 注册供 DSH 设置中心前端面板使用的 HTTP REST API 路由
- * 覆盖状态轮询、配置保存、总线扫描、Profile 导入/删除以及底层会话控制
- */
 export function registerRoutes(ctx, { store, sessions, pluginRoot }) {
   const disposers = [];
   const route = (path, post, operation) => {

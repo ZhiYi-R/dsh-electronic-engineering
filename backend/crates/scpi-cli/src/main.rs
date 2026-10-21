@@ -1,8 +1,6 @@
-//! # `scpi` — 命令行与 JSON-lines 后台执行器
-//!
-//! 提供双重角色：
-//! 1. 工程师调试命令行：直接在终端中进行仪器发现、信息读取、错误排查、单指令读写与 REPL 交互；
-//! 2. 插件后台守护服务（`scpi serve`）：通过标准输入输出的 JSON-lines 协议与 Node.js 宿主双向交互。
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+//! `scpi`: CLI tool and JSON-lines stdio daemon (`scpi serve`).
 
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};

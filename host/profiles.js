@@ -20,11 +20,6 @@ const DEFAULTS = {
   maxSessions: 4,
 };
 
-/**
- * 仪器档案（Profile）与设置持久化存储：
- * 负责 Profile JSON 与配套 Lua 脚本在本地磁盘的校验、安装、枚举与原子更新。
- * 用户安装的档案默认独立保存在 ~/.dsh/ee-fat-whale/profiles/ 下，防止插件更新时被冲掉。
- */
 export class ProfileStore {
   constructor({ pluginRoot, baseDir, config = {} }) {
     this.pluginRoot = pluginRoot;
@@ -194,10 +189,6 @@ export class ProfileStore {
     return { ...summary(profile, file, true), path: file, profile, source: context.source };
   }
 
-  /**
-   * 从压缩包数据安装仪器档案：
-   * 先由 archive.js 执行解包与安全检查（防路径穿越、防异常大包），随后将 Profile 和 Lua 写入目标目录
-   */
   async installArchive(buffer, filename) {
     if (!Buffer.isBuffer(buffer)) throw new Error('instrument bundle must be a Buffer');
     const bundle = readBundle(buffer, filename);
@@ -227,10 +218,6 @@ export class ProfileStore {
     throw new Error(`bundled instrument '${name}' does not exist`);
   }
 
-  /**
-   * 删除指定的仪器 Profile：
-   * 必须确保当前没有使用该 Profile 的活跃会话，防止通信中途文件被删导致子进程异常
-   */
   async remove(id, { isActive } = {}) {
     assertId(id);
     if (isActive?.(id)) {

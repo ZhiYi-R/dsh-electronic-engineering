@@ -4,13 +4,8 @@ import zlib from 'node:zlib';
 const MAX_ENTRIES = 64;
 const MAX_UNPACKED = 16 * 1024 * 1024;
 
-/**
- * 安全解析仪器归档包（.tar.gz / .tgz / .zip / .tar）：
- * 1. 防解压炸弹：限制文件项最多 64 个，解压后总大小上限 16MB；
- * 2. 格式完整性约束：包内必须包含且仅包含一个 Profile JSON，可附带一个配套 Lua 脚本；
- * 3. 拒绝任意未知多余文件，防范恶意脚本夹带；
- * 4. 彻底防范目录穿越（Path Traversal）与符号链接劫持。
- */
+// Unpack a profile archive (.tar.gz, .tgz, .zip, .tar) in memory.
+// Enforces entry/size caps and rejects symlinks, path traversal, and unexpected file types.
 export function readBundle(buffer, filename) {
   const entries = extract(buffer, filename);
   const files = flatten(entries);
@@ -100,7 +95,7 @@ function extractTar(buffer) {
     } else if (type === 'x') {
       paxName = parsePaxName(data) ?? paxName;
     } else if (type === '5') {
-      // 目录节点：tar 中普通目录不单独生成文件项，直接跳过
+      // directory entry
     } else if (type === '0' || type === '\0') {
       total += size;
       if (total > MAX_UNPACKED) throw new Error('instrument bundle is too large');

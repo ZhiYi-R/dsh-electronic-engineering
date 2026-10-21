@@ -12,23 +12,23 @@ use crate::error::{Error, Result};
 use crate::scpi::HeaderPattern;
 use crate::value::{format_float, parse_value, Value, ValueType};
 
-/// 随 Profile 附带的辅助 Lua 宏脚本源码
+/// Companion Lua macro script loaded alongside a profile.
 #[derive(Debug, Clone)]
 pub struct LuaScript {
     pub name: String,
     pub source: String,
 }
 
-/// 独立读取模式（针对未与写入配对的独立 read() 调用）：
-/// 不同仪器的总线队列策略天差地别，必须由 Profile 明示其硬件行为
+/// How standalone `read()` calls (not paired with a query write) behave.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ReadMode {
-    /// 仅允许一问一答的配对查询；禁止单独调用 read()。
-    /// 【避坑重点】：Keysight 33600A 等设备硬件设计如此，无待读数据时裸 read() 会持续挂死直到总线超时。
+    /// Only paired queries are allowed; standalone `read()` is rejected.
+    /// Needed for instruments like the Keysight 33600A that hang until timeout
+    /// if read without a pending query.
     QueryOnly,
-    /// 独立 read() 会持续阻塞直到收到完整的换行响应或超时。
+    /// Block until a newline-terminated response arrives or timeout elapses.
     Blocking,
-    /// 独立 read() 立即非阻塞返回：若当前缓冲区有完整行则返回数据，否则立即返回 None。
+    /// Return a complete buffered line if available, or `None` immediately.
     NonBlocking,
 }
 
@@ -53,15 +53,14 @@ impl ReadMode {
     }
 }
 
-/// 硬件输入缓冲区的清空策略：
-/// 盲目向某些仪器发送清除指令可能会破坏正在运行的输出序列或导致仪器报状态错误
+/// Policy for clearing the instrument input buffer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ClearPolicy {
-    /// 严禁清空输入；任何 clear_input() 调用都会被直接拦截拒绝。
+    /// Reject `clear_input()` calls.
     Never,
-    /// 允许显式手动调用 clear_input()，但建立连接时不自动清空。
+    /// Allow explicit `clear_input()` calls, but do not clear on open.
     Manual,
-    /// 刚建立物理会话时自动执行一次清除以清空残留垃圾数据，后续允许手动清空。
+    /// Clear once when opening the session, and allow explicit clears later.
     OnOpen,
 }
 
@@ -86,13 +85,12 @@ impl ClearPolicy {
     }
 }
 
-/// 仪器的完整 I/O 与队列交互策略：
-/// 引擎对所有强类型 get/query 均采用严格的配对查询；本策略用于管控独立 read、暂存响应和清空操作。
+/// I/O and queue policy for an instrument profile.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct IoPolicy {
     pub read_mode: ReadMode,
-    /// 为 false 时：查询必须立刻读完，禁止使用 write_raw 发送带问号的查询命令。
-    /// 为 true 时：允许通过 write_raw 暂留一个待读响应，稍后再由 read() 读取消费。
+    /// When `false`, queries must be consumed immediately and raw query writes
+    /// via `write_raw` are rejected.
     pub allow_pending_responses: bool,
     pub clear_input: ClearPolicy,
 }
@@ -117,20 +115,20 @@ impl IoPolicy {
     }
 }
 
-/// 单条声明式 SCPI 命令（编译后的强类型结构）
+/// One SCPI command definition compiled from a profile.
 #[derive(Debug, Clone)]
 pub struct Command {
     pub id: String,
-    /// 写入时使用的标准 SCPI 头；查询时默认在末尾追加 ?（除非指定了 read_header）。
+    /// Canonical write header; queries append `?` unless `read_header` is set.
     pub header: String,
-    /// 读写不对称时专用的查询头（例如写用 :MEAS:VOLT:DC，读用 :MEAS:VOLT:DC:RANGe?）。
+    /// Separate query header when read and write paths differ (e.g. `:MEAS:VOLT:DC:RANGe`).
     pub read_header: Option<String>,
     pub summary: Option<String>,
     pub writable: bool,
     pub readable: bool,
-    /// 安全输出联锁：若设置，写入该命令前会自动先关闭此通道输出，成功后再重新开启。
+    /// Boolean output command to turn off before writing and back on after.
     pub safety_output: Option<String>,
-    /// 硬件选件依赖：仅当仪器具备此列表中的选件时才暴露此命令。
+    /// Hardware options required for this command.
     pub requires: Vec<String>,
     pub args: Vec<Arg>,
     pub result: Option<ResultSpec>,
