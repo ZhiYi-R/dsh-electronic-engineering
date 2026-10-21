@@ -1,0 +1,27 @@
+{
+  "fallback": "+0",
+  "responses": {
+    "*IDN?": "RIGOL TECHNOLOGIES,MSO5104,MS00000000,00.01.03.00.03",
+    "*OPC?": "1",
+    "*ESR?": "0",
+    "*STB?": "0",
+    "*TST?": "0",
+    ":SYSTem:ERRor?": "+0,\"No error\"",
+    ":ACQuire:TYPE?": "NORM",
+    ":CHANnel1:SCALe?": "+5.000000E-01",
+    ":CHANnel1:OFFSet?": "+0.0",
+    ":TIMebase:SCALe?": "+1.000000E-06",
+    ":TIMebase:OFFSet?": "+0.0",
+    ":WAVeform:SOURce?": "CHANnel1",
+    ":MEASure:ITEM? VPP,CHANnel1": "+1.500000E+00",
+    ":SYSTem:OPTion:STATus? AWG": "1",
+    ":SYSTem:OPTion:STATus? BND": "0",
+    ":SYSTem:OPTion:STATus? COMP": "0",
+    ":SYSTem:OPTion:STATus? EMBD": "0",
+    ":SYSTem:OPTion:STATus? AUTO": "0",
+    ":SYSTem:OPTion:STATus? FLEX": "0",
+    ":SYSTem:OPTion:STATus? AUDIO": "0",
+    ":SYSTem:OPTion:STATus? AERO": "0",
+    ":SYSTem:OPTion:STATus? PWR": "0"
+  }
+}

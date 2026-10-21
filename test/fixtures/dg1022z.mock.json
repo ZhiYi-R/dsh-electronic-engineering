@@ -1,0 +1,15 @@
+{
+  "fallback": "+0",
+  "responses": {
+    "*IDN?": "Rigol Technologies,DG1022Z,DG1ZA000000000,03.01.12",
+    "*OPC?": "1",
+    "*ESR?": "0",
+    "*STB?": "0",
+    "*TST?": "0",
+    ":SYSTem:ERRor?": "+0,\"No error\"",
+    ":SOURce1:FREQuency?": "+1.000000E+03",
+    ":SOURce1:VOLTage?": "+5.000000E-01",
+    ":OUTPut1?": "1",
+    ":SOURce1:FUNCtion?": "SIN"
+  }
+}
