@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, bail, Context, Result};
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 use serde::Deserialize;
 use serde_json::{json, Value as JsonValue};
 
@@ -27,7 +27,8 @@ struct Cli {
     #[arg(long, global = true)]
     profile: Option<PathBuf>,
 
-    /// Transport: mock, mock:<responses.json>, tcp://host:port, /dev/usbtmc0.
+    /// Transport: mock, mock:<responses.json>, tcp://host:port,
+    /// usb:<vid>:<pid>[:<serial>], or /dev/usbtmc0.
     #[arg(long, global = true, default_value = "mock")]
     transport: String,
 
@@ -66,8 +67,8 @@ enum Sub {
     Write { scpi: String },
     /// Call a Lua macro defined by the profile.
     Call { name: String, args: Vec<String> },
-    /// Enumerate USBTMC instruments from USB descriptors.
-    Discover,
+    /// Discover instruments on USB and, with --lan, on the network.
+    Discover(DiscoverArgs),
     /// Run the newline-delimited JSON backend on stdin/stdout.
     Serve,
     /// Interactive prompt on top of the same engine.
@@ -88,7 +89,7 @@ fn main() -> Result<()> {
         Sub::Query { scpi } => cmd_query(&cli, scpi),
         Sub::Write { scpi } => cmd_write(&cli, scpi),
         Sub::Call { name, args } => cmd_call(&cli, name, args),
-        Sub::Discover => cmd_discover(),
+        Sub::Discover(args) => cmd_discover(args),
         Sub::Serve => cmd_serve(&cli),
         Sub::Repl => cmd_repl(&cli),
     }
@@ -324,10 +325,78 @@ struct Request {
     name: Option<String>,
 }
 
-fn cmd_discover() -> Result<()> {
-    let devices = scpi_core::transport::usb::discover()?;
-    println!("{}", serde_json::to_string_pretty(&devices)?);
+fn cmd_discover(args: &DiscoverArgs) -> Result<()> {
+    let implied_lan = !args.subnets.is_empty() || !args.hosts.is_empty() || !args.ports.is_empty();
+    let lan = args.lan || implied_lan;
+    let options = scpi_core::discovery::DiscoverOptions {
+        usb: !args.no_usb,
+        lan,
+        mdns: lan && !args.no_mdns,
+        sweep: lan && !args.no_sweep,
+        subnets: args.subnets.clone(),
+        hosts: args.hosts.clone(),
+        ports: args.ports.clone(),
+        probe_idn: !args.no_idn,
+        connect_timeout: Duration::from_millis(args.sweep_timeout_ms),
+        mdns_timeout: Duration::from_millis(args.mdns_timeout_ms),
+        idn_timeout: Duration::from_millis(args.idn_timeout_ms),
+    };
+    let discovery = scpi_core::discovery::discover(&options)?;
+    for warning in &discovery.warnings {
+        eprintln!("warning: {warning}");
+    }
+    println!("{}", serde_json::to_string_pretty(&discovery.devices)?);
     Ok(())
+}
+
+/// Anything implying network work (`--lan`, `--subnet`, `--host`, `--port`)
+/// also turns on LAN discovery.
+#[derive(Args, Debug)]
+struct DiscoverArgs {
+    /// Also look for instruments on the network.
+    #[arg(long)]
+    lan: bool,
+
+    /// Skip USBTMC enumeration.
+    #[arg(long)]
+    no_usb: bool,
+
+    /// Skip the mDNS / DNS-SD browse (LAN only).
+    #[arg(long)]
+    no_mdns: bool,
+
+    /// Skip the TCP subnet sweep (LAN only).
+    #[arg(long)]
+    no_sweep: bool,
+
+    /// Subnet to sweep, e.g. 192.168.1.0/24. Repeatable; defaults to the
+    /// local interfaces, clamped to /24.
+    #[arg(long = "subnet", value_name = "CIDR")]
+    subnets: Vec<String>,
+
+    /// Address to probe, e.g. 192.168.1.40:5025. Repeatable.
+    #[arg(long = "host", value_name = "HOST[:PORT]")]
+    hosts: Vec<String>,
+
+    /// Port to sweep. Repeatable; defaults to 5025 and 5555.
+    #[arg(long = "port", value_name = "PORT")]
+    ports: Vec<u16>,
+
+    /// Do not query *IDN?; report anything that answers the socket.
+    #[arg(long)]
+    no_idn: bool,
+
+    /// Per-address TCP connect timeout for the sweep, in milliseconds.
+    #[arg(long, default_value_t = 250)]
+    sweep_timeout_ms: u64,
+
+    /// Total mDNS browse window, in milliseconds.
+    #[arg(long, default_value_t = 1200)]
+    mdns_timeout_ms: u64,
+
+    /// *IDN? response timeout, in milliseconds.
+    #[arg(long, default_value_t = 700)]
+    idn_timeout_ms: u64,
 }
 
 fn cmd_serve(cli: &Cli) -> Result<()> {

@@ -104,12 +104,14 @@ export class InstrumentTools {
 
     let targetProfile = String(profileId ?? profile_id ?? '').trim();
     if (!targetProfile) {
-      const scan = await discover({ pluginRoot: this.store.pluginRoot, store: this.store });
-      const found = scan.instruments.find((instrument) => instrument.resource === source);
+      const found = await this.inferInstrument(source);
       if (!found) throw new Error(`no instrument found at ${source}`);
       targetProfile = found.profile_id;
       if (!targetProfile) {
-        throw new Error(`no installed profile matches ${source}; install an instrument bundle first`);
+        const detail = found.idn ? ` (*IDN? reported ${found.idn})` : '';
+        throw new Error(
+          `no installed profile matches ${source}${detail}; install an instrument bundle first`,
+        );
       }
     }
 
@@ -143,6 +145,26 @@ export class InstrumentTools {
       if (!open) await this.sessions.close(info.session_id).catch(() => {});
       throw error;
     }
+  }
+
+  // A tcp:// resource is probed directly, so instruments outside the swept
+  // subnets still resolve; USB resources come from a descriptor scan.
+  async inferInstrument(source) {
+    const lan = /^tcp:/i.test(source);
+    const options = lan
+      ? {
+          usb: false,
+          lan: true,
+          mdns: false,
+          sweep: false,
+          hosts: [source.replace(/^tcp:\/*/i, '')],
+        }
+      : { usb: true, lan: false };
+    const scan = await discover({ pluginRoot: this.store.pluginRoot, store: this.store, ...options });
+    const exact = scan.instruments.find((instrument) => instrument.resource === source);
+    if (exact) return exact;
+    if (lan && scan.instruments.length === 1) return scan.instruments[0];
+    return null;
   }
 
   registerInstrument({ info, profile, transport, options }) {

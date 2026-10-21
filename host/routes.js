@@ -1,5 +1,5 @@
 import { resolveBinary } from './session.js';
-import { discover } from './discover.js';
+import { discover, scanOptions } from './discover.js';
 
 const PREFIX = '/api/ee-fat-whale';
 const STATIC_TOOLS = new Set([
@@ -45,8 +45,9 @@ export function registerRoutes(ctx, { store, sessions, pluginRoot }) {
     return state(store, sessions, pluginRoot);
   });
 
-  route(`${PREFIX}/discover`, true, async () => {
-    const result = await discover({ pluginRoot, store });
+  route(`${PREFIX}/discover`, true, async (req) => {
+    const body = await readJson(req);
+    const result = await discover({ pluginRoot, store, ...scanOptions(body) });
     return { ok: true, ...result };
   });
 

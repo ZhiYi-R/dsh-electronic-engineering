@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { readBundle } from './archive.js';
+import { clearDiscoveryCache } from './discover.js';
 
 const ID_RE = /^[a-z][a-z0-9._-]*$/;
 const BUNDLE_EXTENSIONS = ['.tar.gz', '.tgz', '.zip', '.tar'];
@@ -186,6 +187,7 @@ export class ProfileStore {
     }
 
     await atomicWrite(file, `${JSON.stringify(profile, null, 2)}\n`);
+    clearDiscoveryCache();
     return { ...summary(profile, file, true), path: file, profile, source: context.source };
   }
 
@@ -237,6 +239,7 @@ export class ProfileStore {
       await fs.unlink(path.join(dir, profile.lua)).catch(() => {});
     }
     await fs.unlink(path.join(dir, `${id}.mock.json`)).catch(() => {});
+    clearDiscoveryCache();
     return { id, removed: true };
   }
 }
@@ -307,6 +310,7 @@ function summary(profile, file, valid) {
       : [],
     idn_match: Array.isArray(profile.idn_match) ? profile.idn_match : [],
     usb: profile.usb ?? null,
+    network: profile.network ?? null,
     file,
     valid,
   };

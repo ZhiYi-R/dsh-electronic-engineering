@@ -7,6 +7,7 @@ use std::time::Duration;
 
 use crate::error::{Error, Result};
 
+pub mod lan;
 pub mod mock;
 pub mod tcp;
 pub mod usb;
