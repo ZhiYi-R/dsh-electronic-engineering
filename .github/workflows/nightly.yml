@@ -117,6 +117,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: >-
           gh release create nightly dist/*
+          --repo "$GITHUB_REPOSITORY"
           --title "Nightly $(date -u +%Y-%m-%d)"
           --notes "Automated nightly build from $(date -u +%Y-%m-%dT%H:%MZ). Not a stable release."
           --prerelease
