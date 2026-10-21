@@ -1,5 +1,5 @@
 import { resolveBinary } from './session.js';
-import { discover } from './discover.js';
+import { discover, scanOptions } from './discover.js';
 
 const output = {
   schema: { type: 'object', additionalProperties: true },
@@ -85,14 +85,50 @@ export function registerTools(ctx, { store, sessions, pluginRoot, instruments })
   register(ctx, {
     name: 'instrument_scan',
     description:
-      'Scan USB for USBTMC instruments on Windows, macOS, and Linux. Returns a cross-platform resource "usb:<vid>:<pid>[:<serial>]", USB IDs, serial/manufacturer/product strings, and the installed profile matched by USB VID/PID. Does not open the device or query *IDN?.',
+      'Discover instruments and match them against installed profiles. USBTMC devices are enumerated from USB descriptors (resource "usb:<vid>:<pid>[:<serial>]"); with lan:true (the default) the local network is also searched via mDNS/DNS-SD and a TCP sweep, and every reachable address is identified by *IDN? (resource "tcp://host:port"). LAN results are cached for a few seconds. Pass lan:false for a USB-only scan, or hosts/subnets to target a specific segment.',
     parameters: {
       type: 'object',
-      properties: {},
+      properties: {
+        usb: {
+          type: 'boolean',
+          description: 'Include USBTMC devices enumerated from USB descriptors. Defaults to true.',
+        },
+        lan: {
+          type: 'boolean',
+          description: 'Also search the LAN (mDNS + subnet sweep + *IDN? probing). Defaults to true.',
+        },
+        mdns: {
+          type: 'boolean',
+          description: 'Browse mDNS/DNS-SD for _scpi-raw/_scpi/_vxi-11/_lxi advertisements.',
+        },
+        sweep: {
+          type: 'boolean',
+          description: 'TCP-sweep the local subnets (clamped to /24) on the SCPI ports.',
+        },
+        subnets: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Explicit CIDR subnets to sweep, e.g. ["192.168.1.0/24"].',
+        },
+        hosts: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Explicit host[:port] addresses to probe, e.g. ["192.168.1.40:5025"].',
+        },
+        ports: {
+          type: 'array',
+          items: { type: 'integer' },
+          description: 'Ports to sweep. Defaults to 5025 (SCPI-RAW) and 5555.',
+        },
+        probe_idn: {
+          type: 'boolean',
+          description: 'Query *IDN? to identify each address. Defaults to true; without it any open socket is reported.',
+        },
+      },
       additionalProperties: false,
     },
-    async execute() {
-      const result = await discover({ pluginRoot, store });
+    async execute(args) {
+      const result = await discover({ pluginRoot, store, ...scanOptions(args) });
       for (const instrument of result.instruments) {
         const loaded = instruments?.findByResource(instrument.resource);
         if (loaded) {
@@ -115,11 +151,13 @@ export function registerTools(ctx, { store, sessions, pluginRoot, instruments })
       properties: {
         resource: {
           type: 'string',
-          description: 'Instrument resource from instrument_scan, for example usb:1ab1:09c4:DM3R251000551.',
+          description:
+            'Instrument resource from instrument_scan: "usb:1ab1:09c4:DM3R251000551" for USBTMC or "tcp://192.168.1.40:5025" for LAN.',
         },
         profile_id: {
           type: 'string',
-          description: 'Installed profile id. Inferred from the scan match when omitted.',
+          description:
+            'Installed profile id. When omitted it is inferred from the USB descriptors or from a live *IDN? probe (so LAN instruments behind a single tcp:// resource work without it).',
         },
         transport: {
           type: 'string',
@@ -183,7 +221,7 @@ export function registerTools(ctx, { store, sessions, pluginRoot, instruments })
         transport: {
           type: 'string',
           description:
-            'Transport for action "open": usb:<vid>:<pid>[:<serial>] (cross-platform, from instrument_scan), tcp://host:port, or usbtmc:/dev/usbtmc0 (Linux kernel path). mock/mock:<responses.json> are for tests.',
+            'Transport for action "open": usb:<vid>:<pid>[:<serial>] (cross-platform, from instrument_scan), tcp://host:port (LAN, from instrument_scan), or usbtmc:/dev/usbtmc0 (Linux kernel path). mock/mock:<responses.json> are for tests.',
         },
         session_id: {
           type: 'string',

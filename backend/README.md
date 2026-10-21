@@ -20,8 +20,9 @@ Rust 执行器（scpi-core / scpi-cli）
    ├── profile.rs    加载 Profile JSON，编译参数类型与量程约束
    ├── scpi.rs       SCPI 命令头解析，长短助记符匹配与规范化输出
    ├── instrument.rs 会话管理、*IDN? 校验、safety_output 联锁、错误队列轮询
+   ├── discovery.rs  USB 与 LAN（mDNS / 子网扫描 / *IDN?）设备发现
    ├── lua.rs        可选的 Lua 5.4 宏运行时（Cargo feature: lua，默认开启）
-   └── transport/    Mock / TCP Socket / nusb USBTMC / Linux /dev/usbtmc*
+   └── transport/    Mock / TCP Socket / LAN 探测 / nusb USBTMC / Linux /dev/usbtmc*
 ```
 
 主要特性：
@@ -97,7 +98,7 @@ PROFILE="$TEMP_DIR/dm3058.json"
 | `scpi query '<scpi>'` | 发送原始 SCPI 查询；若命令头在 Profile 中有定义则自动解析类型 |
 | `scpi write '<scpi>'` | 发送原始 SCPI 写入命令（拒绝带 `?` 的查询命令） |
 | `scpi call <macro> [args]` | 调用 Profile 附带的 Lua 宏函数 |
-| `scpi discover` | 枚举当前 USB 总线上的 USBTMC 设备（无需 `--profile`） |
+| `scpi discover [options]` | 扫描 USBTMC 设备；加 `--lan` 同时通过 mDNS 与 TCP 子网扫描发现局域网仪器（无需 `--profile`） |
 | `scpi serve` | 启动基于 stdin/stdout 的 JSON-lines 守护进程 |
 | `scpi repl` | 交互式调试命令行 |
 

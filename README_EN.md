@@ -98,7 +98,7 @@ flowchart TB
 | Transport Spec | Description |
 | --- | --- |
 | `usb:<vid>:<pid>[:<serial>]` | Cross-platform USBTMC via `nusb` (no VISA installation required). Returned by `instrument_scan`. |
-| `tcp://host:port` | Raw SCPI over TCP (typically port 5025 or 5555; check the instrument manual). |
+| `tcp://host:port` | Raw SCPI over TCP (typically port 5025 or 5555; check the instrument manual). Returned by `instrument_scan` for LAN instruments. |
 | `usbtmc:/dev/usbtmcN` | Linux kernel USBTMC character device. |
 | `mock` / `mock:<responses.json>` | In-memory mock transport for tests and offline use. |
 
@@ -172,19 +172,42 @@ instrument_profiles {"action": "install_bundled", "name": "mso5000"}
 
 ### 2. Scan and Load
 
-Enumerate connected USBTMC devices:
+Discovery covers USB and, by default, the LAN:
 
 ```json
 instrument_scan {}
 ```
 
-Load the matched device:
+- **USB**: USBTMC devices are enumerated from USB descriptors; nothing is opened and no command is sent.
+- **LAN**: an mDNS/DNS-SD browse (`_scpi-raw` / `_scpi` / `_vxi-11` / `_lxi`) runs first,
+  then the local subnets (clamped to /24) are TCP-swept on ports 5025 and 5555, and each
+  address that answers is identified with `*IDN?`.
+- USB only: `instrument_scan {"lan": false}`. Specific addresses:
+  `instrument_scan {"usb": false, "hosts": ["192.168.1.40:5025"]}`.
+
+Load the matched device (`profile_id` may be omitted for `tcp://` resources; it is
+inferred from a live `*IDN?` probe):
 
 ```json
 instrument_load {
   "resource": "usb:1ab1:0515:MS5A222402148",
   "profile_id": "rigol.mso5000"
 }
+```
+
+```json
+instrument_load {
+  "resource": "tcp://192.168.1.40:5025"
+}
+```
+
+Command-line equivalents:
+
+```bash
+scpi discover                     # USB only (unchanged)
+scpi discover --lan               # USB + mDNS + local subnet sweep
+scpi discover --lan --no-mdns --subnet 192.168.1.0/24
+scpi discover --host 192.168.1.40:5025 --no-mdns --no-sweep
 ```
 
 This registers only the level-2 overview tool (`instrument_mso5000_ms5a222402148`) with `tool_count: 0`.
@@ -256,7 +279,7 @@ ee-fat-whale/
 │   ├── profiles.js          # Profile store and settings persistence
 │   ├── archive.js           # In-memory bundle extraction and validation
 │   ├── session.js           # Subprocess lifecycle and JSON-lines IPC
-│   ├── discover.js          # USBTMC enumeration and profile matching
+│   ├── discover.js          # USB/LAN discovery, *IDN? matching, short cache
 │   ├── instruments.js       # Tier 2/3 tool registration, option probing, channel folding
 │   ├── tools.js             # 5 static management tools
 │   └── routes.js            # HTTP endpoints for the settings UI
@@ -275,7 +298,7 @@ ee-fat-whale/
 
 1. **No IEEE 488.2 `#<len>` binary block transfers yet**: raw waveform memory dumps, arbitrary waveform point uploads, and display bitmap captures are not yet supported.
 2. **Raw TCP sockets only for LAN**: uses `tcp://ip:port`; VXI-11 and HiSLIP are not implemented.
-3. **USB-only auto-discovery**: `instrument_scan` enumerates USBTMC devices; LAN instruments must be loaded by IP.
+3. **Cross-subnet LAN discovery requires explicit targets**: auto-discovery checks mDNS and local `/24` subnets; instruments on other subnets/VLANs require passing `subnets` or `hosts`.
 
 ---
 

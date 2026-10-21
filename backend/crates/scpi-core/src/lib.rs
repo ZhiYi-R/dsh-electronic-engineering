@@ -6,6 +6,7 @@
 //! error-queue polling, and USBTMC/TCP/mock transports. Concrete instrument
 //! command sets live in external JSON profiles (and optional Lua scripts).
 
+pub mod discovery;
 pub mod error;
 pub mod instrument;
 pub mod profile;

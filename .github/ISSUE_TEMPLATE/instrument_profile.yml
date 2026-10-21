@@ -1,12 +1,11 @@
-name: 🔌 新仪器 Profile
+name: 新仪器 Profile
 description: 请求支持一款新仪器（新增 profile bundle）
 labels: ["instrument-profile", "enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        支持新仪器只需要一个新的 profile bundle（JSON 命令表 + 可选 Lua），
-        不需要改 Rust 代码。请提供以下信息以便编写和验证 profile。
+        新增仪器只需添加对应的 profile bundle（JSON 命令表 + 可选 Lua 脚本），请提供以下信息。
 
   - type: input
     id: instrument

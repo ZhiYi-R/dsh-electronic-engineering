@@ -16,13 +16,32 @@ pub struct TcpTransport {
 
 impl TcpTransport {
     pub fn connect(addr: &str, timeout: Duration) -> Result<Self> {
-        let target: SocketAddr = addr
+        // A hostname can resolve to several addresses (IPv4 + IPv6, multiple
+        // A records). Try each in turn instead of only the first one.
+        let targets: Vec<SocketAddr> = addr
             .to_socket_addrs()
             .map_err(|e| Error::Transport(format!("cannot resolve '{addr}': {e}")))?
-            .next()
-            .ok_or_else(|| Error::Transport(format!("no address for '{addr}'")))?;
-        let stream = TcpStream::connect_timeout(&target, timeout)
-            .map_err(|e| Error::Transport(format!("cannot connect to {target}: {e}")))?;
+            .collect();
+        if targets.is_empty() {
+            return Err(Error::Transport(format!("no address for '{addr}'")));
+        }
+        let mut stream = None;
+        let mut last_error = None;
+        for target in &targets {
+            match TcpStream::connect_timeout(target, timeout) {
+                Ok(connected) => {
+                    stream = Some((connected, *target));
+                    break;
+                }
+                Err(error) => last_error = Some((*target, error)),
+            }
+        }
+        let Some((stream, target)) = stream else {
+            let (target, error) = last_error.expect("targets is not empty");
+            return Err(Error::Transport(format!(
+                "cannot connect to {target}: {error}"
+            )));
+        };
         stream.set_read_timeout(Some(timeout))?;
         stream.set_write_timeout(Some(timeout))?;
         stream.set_nodelay(true)?;

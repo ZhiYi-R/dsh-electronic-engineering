@@ -176,28 +176,50 @@ instrument_profiles {"action": "install_bundled", "name": "mso5000"}
 
 ### 2. 扫描并加载仪器
 
-枚举当前 USB 总线上的 USBTMC 设备：
+默认同时扫描 USB 总线和局域网：
 
 ```json
 instrument_scan {}
 ```
 
+- **USB**：读取 USB 描述符枚举 USBTMC 设备，不打开设备。
+- **LAN**：浏览 mDNS/DNS-SD（`_scpi-raw` / `_scpi` / `_vxi-11` / `_lxi`），并对本地网段（限制为 `/24`）的 5025、5555 端口做 TCP 扫描，对可连接地址发送 `*IDN?` 识别型号。
+- 仅扫 USB：`instrument_scan {"lan": false}`；指定地址：`instrument_scan {"usb": false, "hosts": ["192.168.1.40:5025"]}`。
+
 返回匹配的设备与 `profile_id`：
 
 ```json
-{
-  "resource": "usb:1ab1:0515:MS5A222402148",
-  "profile_id": "rigol.mso5000"
-}
+[
+  {
+    "resource": "usb:1ab1:0515:MS5A222402148",
+    "transport": "usb",
+    "profile_id": "rigol.mso5000"
+  },
+  {
+    "resource": "tcp://192.168.1.40:5025",
+    "transport": "lan",
+    "source": "mdns",
+    "idn": "Rigol Technologies,DM3058E,DM3R251000551,00.01.00",
+    "profile_id": "rigol.dm3058"
+  }
+]
 ```
 
-加载仪器：
+加载仪器（`profile_id` 可省略，LAN 地址会通过 `*IDN?` 自动匹配）：
 
 ```json
 instrument_load {
-  "resource": "usb:1ab1:0515:MS5A222402148",
-  "profile_id": "rigol.mso5000"
+  "resource": "tcp://192.168.1.40:5025"
 }
+```
+
+对应的 CLI 命令：
+
+```bash
+scpi discover                     # 仅 USB
+scpi discover --lan               # USB + mDNS + 本地网段扫描
+scpi discover --lan --no-mdns --subnet 192.168.1.0/24
+scpi discover --host 192.168.1.40:5025 --no-mdns --no-sweep
 ```
 
 此时只会注册一个二级概览工具，尚未展开具体命令工具：
@@ -355,7 +377,7 @@ ee-fat-whale/
 │   ├── profiles.js          # Profile 存储与设置持久化
 │   ├── archive.js           # 仪器包内存解压与校验
 │   ├── session.js           # scpi serve 子进程管理与 JSON-lines 通信
-│   ├── discover.js          # USBTMC 设备扫描与 Profile 匹配
+│   ├── discover.js          # USB/LAN 设备扫描、*IDN? 匹配与短缓存
 │   ├── instruments.js       # 二/三层动态工具注册、选件探测与通道折叠
 │   ├── tools.js             # 5 个静态管理工具定义
 │   └── routes.js            # 设置界面 HTTP 路由
@@ -374,7 +396,7 @@ ee-fat-whale/
 
 1. **不支持 IEEE 488.2 `#<len>` 二进制数据块**：深存储原始波形导出、任意波点表下发和屏幕截图导出暂未实现。
 2. **LAN 仅支持 Raw TCP Socket**：使用 `tcp://ip:port` 直连，未实现 VXI-11 或 HiSLIP。
-3. **仅自动扫描 USBTMC**：局域网仪器需手动指定 `tcp://` 地址。
+3. **跨网段 LAN 仪器需手动指定**：自动发现默认扫描 mDNS 与本机直连 `/24` 网段，跨子网或 VLAN 时需传入 `subnets` 或 `hosts`。
 
 ---
 

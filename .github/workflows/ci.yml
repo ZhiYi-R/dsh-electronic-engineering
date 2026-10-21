@@ -54,3 +54,27 @@ jobs:
       - name: Clippy
         working-directory: backend
         run: cargo clippy --locked --all-targets -- -D warnings
+
+  node:
+    name: Node (host + smoke tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # The discovery smoke test drives the real binary.
+      - name: Build scpi
+        working-directory: backend
+        run: cargo build --locked
+
+      - name: Test
+        run: npm test

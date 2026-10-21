@@ -40,7 +40,9 @@
   },
   "scripts": {
     "package": "node scripts/package.mjs",
-    "test:client": "node test/client-smoke.mjs"
+    "test": "node test/client-smoke.mjs && node test/discovery-smoke.mjs",
+    "test:client": "node test/client-smoke.mjs",
+    "test:discovery": "node test/discovery-smoke.mjs"
   },
   "icon": "./icon.png"
 }
