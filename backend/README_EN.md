@@ -20,8 +20,9 @@ Rust Executor (scpi-core / scpi-cli)
    ├── profile.rs    Loads Profile JSON, compiles types and range bounds
    ├── scpi.rs       SCPI header parser, short/long mnemonic matching
    ├── instrument.rs Session state, *IDN? check, safety_output interlocks, error queue
+   ├── discovery.rs  USB and LAN (mDNS / subnet sweep / *IDN?) discovery
    ├── lua.rs        Optional Lua 5.4 runtime (Cargo feature: lua, enabled by default)
-   └── transport/    Mock / TCP Socket / nusb USBTMC / Linux /dev/usbtmc*
+   └── transport/    Mock / TCP Socket / LAN probe / nusb USBTMC / Linux /dev/usbtmc*
 ```
 
 Design notes:
@@ -97,7 +98,7 @@ To talk to a USB-connected Rigol DM3058 (`1ab1:09c4`):
 | `scpi query '<scpi>'` | Send a raw SCPI query and parse the result if the header is in the profile |
 | `scpi write '<scpi>'` | Send a raw SCPI write command (rejects queries ending with `?`) |
 | `scpi call <macro> [args]` | Call a Lua macro function defined by the profile |
-| `scpi discover` | List USBTMC devices on the USB bus (no `--profile` needed) |
+| `scpi discover [options]` | Discover USBTMC devices, plus LAN instruments with `--lan` (no `--profile` needed) |
 | `scpi serve` | Run the newline-delimited JSON stdio server |
 | `scpi repl` | Interactive prompt for manual testing |
 

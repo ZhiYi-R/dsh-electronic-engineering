@@ -1,12 +1,12 @@
-name: 🐛 Bug 报告
+name: Bug 报告
 description: 报告插件或后端的问题（崩溃、校验错误、通信异常等）
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        感谢反馈！请尽量填写以下信息，日志和复现步骤对定位问题最关键。
-        注意：原始 SCPI 不会暴露给模型，如果是"想让模型执行某条命令"的需求，请用功能请求模板。
+        请填写复现步骤和相关日志。
+        插件不向模型暴露裸 SCPI 接口；若需支持某条命令或新型号，请使用对应的功能或 Profile 模板。
 
   - type: dropdown
     id: component

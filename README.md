@@ -176,18 +176,15 @@ instrument_profiles {"action": "install_bundled", "name": "mso5000"}
 
 ### 2. 扫描并加载仪器
 
-默认同时搜索 USB 总线和局域网：
+默认同时扫描 USB 总线和局域网：
 
 ```json
 instrument_scan {}
 ```
 
-- **USB**：从 USB 描述符枚举 USBTMC 设备，不打开设备也不发送任何命令。
-- **LAN**：先做 mDNS/DNS-SD 浏览（`_scpi-raw` / `_scpi` / `_vxi-11` / `_lxi`），
-  再对本地网段（自动收敛到 /24）的 5025 与 5555 端口做 TCP 扫描，最后用
-  `*IDN?` 识别每一台能连上的仪器。
-- 只扫 USB：`instrument_scan {"lan": false}`；只探指定地址：
-  `instrument_scan {"usb": false, "hosts": ["192.168.1.40:5025"]}`。
+- **USB**：读取 USB 描述符枚举 USBTMC 设备，不打开设备。
+- **LAN**：浏览 mDNS/DNS-SD（`_scpi-raw` / `_scpi` / `_vxi-11` / `_lxi`），并对本地网段（限制为 `/24`）的 5025、5555 端口做 TCP 扫描，对可连接地址发送 `*IDN?` 识别型号。
+- 仅扫 USB：`instrument_scan {"lan": false}`；指定地址：`instrument_scan {"usb": false, "hosts": ["192.168.1.40:5025"]}`。
 
 返回匹配的设备与 `profile_id`：
 
@@ -208,7 +205,7 @@ instrument_scan {}
 ]
 ```
 
-加载仪器（`profile_id` 可省略，LAN 地址会用 `*IDN?` 现场推断）：
+加载仪器（`profile_id` 可省略，LAN 地址会通过 `*IDN?` 自动匹配）：
 
 ```json
 instrument_load {
@@ -216,10 +213,10 @@ instrument_load {
 }
 ```
 
-命令行等价物：
+对应的 CLI 命令：
 
 ```bash
-scpi discover                     # 仅 USB（保持原有行为）
+scpi discover                     # 仅 USB
 scpi discover --lan               # USB + mDNS + 本地网段扫描
 scpi discover --lan --no-mdns --subnet 192.168.1.0/24
 scpi discover --host 192.168.1.40:5025 --no-mdns --no-sweep
@@ -399,8 +396,7 @@ ee-fat-whale/
 
 1. **不支持 IEEE 488.2 `#<len>` 二进制数据块**：深存储原始波形导出、任意波点表下发和屏幕截图导出暂未实现。
 2. **LAN 仅支持 Raw TCP Socket**：使用 `tcp://ip:port` 直连，未实现 VXI-11 或 HiSLIP。
-3. **局域网发现依赖广播与扫描**：mDNS 只能发现主动广播的仪器；不广播的型号靠 TCP 扫描兜底，
-   跨 subnet / VLAN 时需要显式传 `subnets` 或 `hosts`。
+3. **跨网段 LAN 仪器需手动指定**：自动发现默认扫描 mDNS 与本机直连 `/24` 网段，跨子网或 VLAN 时需传入 `subnets` 或 `hosts`。
 
 ---
 

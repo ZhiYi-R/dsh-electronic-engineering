@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: 💬 提问与讨论
+  - name: 提问与讨论
     url: https://github.com/ZhiYi-R/dsh-electronic-engineering/discussions
-    about: 使用问题、配置咨询请先到 Discussions，不确定是否为 bug 时也建议先发帖讨论。
+    about: 使用问题或配置咨询请先发到 Discussions。

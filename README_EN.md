@@ -298,8 +298,7 @@ ee-fat-whale/
 
 1. **No IEEE 488.2 `#<len>` binary block transfers yet**: raw waveform memory dumps, arbitrary waveform point uploads, and display bitmap captures are not yet supported.
 2. **Raw TCP sockets only for LAN**: uses `tcp://ip:port`; VXI-11 and HiSLIP are not implemented.
-3. **LAN discovery depends on broadcasts and sweeping**: mDNS only finds instruments that advertise
-   themselves; the TCP sweep covers the rest. Crossing subnets/VLANs requires explicit `subnets` or `hosts`.
+3. **Cross-subnet LAN discovery requires explicit targets**: auto-discovery checks mDNS and local `/24` subnets; instruments on other subnets/VLANs require passing `subnets` or `hosts`.
 
 ---
 
