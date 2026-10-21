@@ -1,0 +1,20 @@
+[package]
+name = "scpi-core"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+description = "Data-driven SCPI engine: JSON instrument profiles, typed commands, pluggable transports, Lua macros."
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+nusb = "0.2.7"
+mlua = { version = "0.10.5", features = ["lua54", "vendored"], optional = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"
+
+[features]
+default = ["lua"]
+lua = ["dep:mlua"]

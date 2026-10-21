@@ -1,0 +1,9 @@
+{
+  "fallback": "+0",
+  "responses": {
+    "*IDN?": "RIGOL TECHNOLOGIES,DM3058E,DM3R251000551,1.0.0",
+    ":MEASure:VOLTage:DC?": "+1.234500E-01",
+    ":MEASure:VOLTage:DC:RANGe?": "2",
+    ":SYSTem:ERRor?": "+0,\"No error\""
+  }
+}

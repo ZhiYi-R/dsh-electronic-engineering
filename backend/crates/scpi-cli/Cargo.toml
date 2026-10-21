@@ -1,0 +1,17 @@
+[package]
+name = "scpi-cli"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+description = "Command-line and JSON-lines backend for the ee-fat-whale SCPI engine."
+
+[[bin]]
+name = "scpi"
+path = "src/main.rs"
+
+[dependencies]
+scpi-core = { path = "../scpi-core" }
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"

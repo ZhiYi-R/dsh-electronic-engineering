@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "id": "test.dmm",
+  "name": "Test DMM",
+  "manufacturer": "Test",
+  "idn_match": ["DM3058"],
+  "error_query": "sys.error",
+  "io": {
+    "read_mode": "nonblocking",
+    "allow_pending_responses": true,
+    "clear_input": "manual"
+  },
+  "commands": [
+    {
+      "id": "ieee.idn",
+      "header": "*IDN",
+      "readable": true,
+      "result": "string"
+    },
+    {
+      "id": "meas.vdc",
+      "header": ":MEASure:VOLTage:DC",
+      "readable": true,
+      "result": { "type": "float", "unit": "V" }
+    },
+    {
+      "id": "meas.vdc.range",
+      "header": ":MEASure:VOLTage:DC",
+      "query_header": ":MEASure:VOLTage:DC:RANGe",
+      "writable": true,
+      "readable": true,
+      "args": [
+        {
+          "name": "range",
+          "type": "int",
+          "min": 0,
+          "max": 4,
+          "special": ["MIN", "MAX", "DEF"]
+        }
+      ],
+      "result": "int"
+    },
+    {
+      "id": "rate.dc_voltage",
+      "header": ":RATE:VOLTage:DC",
+      "writable": true,
+      "readable": true,
+      "args": [{ "name": "rate", "type": "enum", "values": ["F", "M", "S"] }],
+      "result": "enum"
+    },
+    {
+      "id": "meas.vdc.filter",
+      "header": ":MEASure:VOLTage:DC:FILTer:STATe",
+      "writable": true,
+      "readable": true,
+      "args": [{ "name": "state", "type": "bool" }],
+      "result": "bool"
+    },
+    {
+      "id": "sys.error",
+      "header": ":SYSTem:ERRor",
+      "readable": true,
+      "result": "string"
+    }
+  ]
+}
