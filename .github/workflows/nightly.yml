@@ -1,0 +1,122 @@
+name: nightly
+
+on:
+  schedule:
+    # 20:00 UTC = 次日 04:00 北京时间
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.platform }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+            arch: x64
+            binary: backend/target/release/scpi
+          - os: ubuntu-22.04-arm
+            platform: linux
+            arch: arm64
+            binary: backend/target/release/scpi
+          - os: macos-15-intel
+            platform: darwin
+            arch: x64
+            binary: backend/target/release/scpi
+          - os: macos-14
+            platform: darwin
+            arch: arm64
+            binary: backend/target/release/scpi
+          - os: windows-latest
+            platform: win32
+            arch: x64
+            binary: backend/target/release/scpi.exe
+          - os: windows-11-arm
+            platform: win32
+            arch: arm64
+            binary: backend/target/release/scpi.exe
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
+
+      - name: Test
+        working-directory: backend
+        run: cargo test --locked
+
+      - name: Build
+        working-directory: backend
+        run: cargo build --release --locked
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Package
+        run: >-
+          node scripts/package.mjs
+          --binary ${{ matrix.binary }}
+          --platform ${{ matrix.platform }}
+          --arch ${{ matrix.arch }}
+          --out dist
+
+      - name: Upload platform package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Publish nightly release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all platform packages
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Show packages
+        run: ls -lh dist
+
+      - name: Delete previous nightly release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view nightly --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release delete nightly --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag
+          fi
+
+      - name: Publish nightly release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create nightly dist/*
+          --title "Nightly $(date -u +%Y-%m-%d)"
+          --notes "Automated nightly build from $(date -u +%Y-%m-%dT%H:%MZ). Not a stable release."
+          --prerelease
