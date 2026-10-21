@@ -838,8 +838,8 @@ impl Arg {
             (ValueType::String, Value::String(v)) => {
                 Ok(if self.quoted { quote(v) } else { v.clone() })
             }
-            (ValueType::Enum, Value::String(v)) => self.canonical_enum(v).map_err(&invalid),
-            (ValueType::Enum, Value::Raw(v)) => self.canonical_enum(v).map_err(&invalid),
+            (ValueType::Enum, Value::String(v)) => self.canonical_enum(v).map_err(invalid),
+            (ValueType::Enum, Value::Raw(v)) => self.canonical_enum(v).map_err(invalid),
             (ValueType::Any, Value::Bool(v)) => Ok(if *v { "ON" } else { "OFF" }.into()),
             (ValueType::Any, Value::Int(v)) => Ok(v.to_string()),
             (ValueType::Any, Value::Float(v)) => Ok(format_float(*v)),
