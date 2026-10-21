@@ -1,0 +1,45 @@
+{
+  "name": "ee-fat-whale",
+  "version": "0.1.0",
+  "private": true,
+  "description": "电子工程师大肥鱼 (ee-fat-whale) — 通用 SCPI 仪器执行器插件：管理仪器 Profile、会话与 LLM 工具。",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.png"
+  },
+  "files": [
+    "index.js",
+    "bin/*",
+    "client.js",
+    "host/*.js",
+    "bundles/*.zip",
+    "bundles/*.tgz",
+    "bundles/*.tar.gz",
+    "audit/*.md",
+    "audit/*.csv",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "README.md",
+    "icon.png"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings"
+      ]
+    }
+  },
+  "scripts": {
+    "package": "node scripts/package.mjs",
+    "test:client": "node test/client-smoke.mjs"
+  },
+  "icon": "./icon.png"
+}

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "EE Fat Whale",
+    "description": "A laboratory SCPI instrument controller for electronics engineers: safely connects oscilloscopes, signal generators, and multimeters to LLMs with strict type checking, hardware safety interlocks, and token-efficient tools."
+  }
+}
